@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Document</title>
+    <style>
+      canvas{
+        border: 1px solid salmon;
+      }
+    </style>
+    <script src="./lib/glMatrix-0.9.6.min.js"></script>
+    <script>
+      var webgl;
+      var vsString = `
+      attribute vec3 a_position;
+
+      // uniform float angle;
+      uniform float u_offsetX;
+      uniform float u_offsetY;
+
+      void main(){
+        gl_Position = vec4(a_position.x + u_offsetX, a_position.y + u_offsetY, 0.0, 1.0);
+      }
+    `;
+      var fsString = `
+      void main(){
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+      }
+    `;
+      var offsetX = 0;
+      var offsetY = 0;
+
+      function init() {
+        initWebgl();
+        initShader();
+        initBuffer();
+        initEvent();
+        draw();
+      }
+      function initWebgl() {
+        const canvas =
+          document.getElementById("webglCanvas");
+        webgl = canvas.getContext("webgl");
+        webgl.viewport(
+          0,
+          0,
+          canvas.clientWidth,
+          canvas.clientHeight
+        );
+      }
+      function initShader() {
+        const vShader = webgl.createShader(
+          webgl.VERTEX_SHADER
+        );
+        const fShader = webgl.createShader(
+          webgl.FRAGMENT_SHADER
+        );
+
+        webgl.shaderSource(vShader, vsString);
+        webgl.shaderSource(fShader, fsString);
+
+        webgl.compileShader(vShader);
+        webgl.compileShader(fShader);
+        if (
+          !webgl.getShaderParameter(
+            vShader,
+            webgl.COMPILE_STATUS
+          )
+        ) {
+          const err = webgl.getShaderInfoLog(vShader);
+          alert(err);
+          return;
+        }
+
+        if (
+          !webgl.getShaderParameter(
+            fShader,
+            webgl.COMPILE_STATUS
+          )
+        ) {
+          const err = webgl.getShaderInfoLog(fShader);
+          alert(err);
+          return;
+        }
+
+        const program = webgl.createProgram();
+
+        webgl.attachShader(program, vShader);
+        webgl.attachShader(program, fShader);
+
+        webgl.linkProgram(program);
+
+        webgl.useProgram(program);
+
+        webgl.program = program;
+      }
+      function initBuffer() {
+        const arr = [0.1, 0.4, 0, 0.1, 0.5, 0, 0.2, 0.4, 0];
+
+        const floatArr = new Float32Array(arr);
+
+        const arrBuffer = webgl.createBuffer();
+
+        webgl.bindBuffer(webgl.ARRAY_BUFFER, arrBuffer);
+        webgl.bufferData(
+          webgl.ARRAY_BUFFER,
+          floatArr,
+          webgl.STATIC_DRAW
+        );
+
+        let aPosition = webgl.getAttribLocation(
+          webgl.program,
+          "a_position"
+        );
+        webgl.vertexAttribPointer(
+          aPosition,
+          3,
+          webgl.FLOAT,
+          false,
+          0,
+          0
+        );
+        webgl.enableVertexAttribArray(aPosition);
+
+        let uOffsetx = webgl.getUniformLocation(
+          webgl.program,
+          "u_offsetX"
+        );
+        webgl.uniform1f(uOffsetx, offsetX);
+        let uOffsety = webgl.getUniformLocation(
+          webgl.program,
+          "u_offsetY"
+        );
+        webgl.uniform1f(uOffsety, offsetY);
+      }
+      function draw() {
+        webgl.clearColor(1.0, 1.0, 1.0, 0.0);
+        webgl.clear(webgl.COLOR_BUFFER_BIT);
+        webgl.drawArrays(webgl.TRIANGLES, 0, 3);
+      }
+      function onload() {
+        init();
+        window.requestAnimationFrame(onload);
+      }
+      function initEvent() {
+        document.addEventListener("keydown", ({ key }) => {
+          switch (key) {
+            case "w":
+              offsetY += 0.0001;
+              break;
+            case "s":
+              offsetY -= 0.0001;
+              break;
+            case "a":
+              offsetX -= 0.0001;
+              break;
+            case "d":
+              offsetX += 0.0001;
+              break;
+            default:
+              return;
+          }
+        });
+      }
+    </script>
+  </head>
+  <body onload="onload()">
+    <canvas
+      id="webglCanvas"
+      width="500"
+      height="500"
+    ></canvas>
+  </body>
+</html>

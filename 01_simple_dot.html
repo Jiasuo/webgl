@@ -8,7 +8,9 @@
       content="width=device-width, initial-scale=1.0"
     />
     <title>Document</title>
+    <!-- Import glMatrix code -->
     <script src="./lib/glMatrix-0.9.6.min.js"></script>
+    <!-- Create script -->
     <script>
       var webgl;
       var projMat4;
@@ -30,7 +32,6 @@
       `;
       // Entry point
       function init() {
-        console.log("init");
         initWebgl();
         initShader();
         initBuffer();
@@ -41,12 +42,16 @@
         let webglDiv =
           document.getElementById("webglCanvas");
         webgl = webglDiv.getContext("webgl");
+
+        // WebGLRenderingContext.viewport(x, y, width, height)
         webgl.viewport(
           0,
           0,
           webglDiv.clientWidth,
           webglDiv.clientHeight
-        ); // WebGLRenderingContext.viewport(x, y, width, height)
+        );
+
+        // mat4.ortho(left, right, bottom, top, near, far, out)
         mat4.ortho(
           0,
           webglDiv.clientWidth,
@@ -69,6 +74,8 @@
         webgl.compileShader(fsshader)
 
         let program =  webgl.createProgram()
+
+
         webgl.attachShader(program, vsshader)
         webgl.attachShader(program, fsshader)
 
@@ -80,13 +87,16 @@
 
       // Data buffering
       function initBuffer() {
+        // Create a point (x, y, z, 1.0)
         let pointPosition = new Float32Array([100.0, 150.0, 0.0, 1.0])
 
+        // Send the position as attribute to the shader
         let aPosition = webgl.getAttribLocation(webgl.program, "a_position")
         webgl.vertexAttrib4fv(aPosition, pointPosition)
 
-        let uniforproj = webgl.getUniformLocation(webgl.program, "proj")
-        webgl.uniformMatrix4fv(uniforproj, false, projMat4)
+        // Use proj uniform (?)
+        let uProj = webgl.getUniformLocation(webgl.program, "proj")
+        webgl.uniformMatrix4fv(uProj, false, projMat4)
       }
 
       function draw() {
@@ -98,7 +108,9 @@
       }
     </script>
   </head>
+  <!-- Initialize code on page load -->
   <body onload="init()">
+    <!-- Create a canvas for WebGL -->
     <canvas
       id="webglCanvas"
       width="500"

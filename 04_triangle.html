@@ -8,9 +8,12 @@
       content="width=device-width, initial-scale=1.0"
     />
     <title>Document</title>
+    <!-- Import glMatrix code -->
     <script src="./lib/glMatrix-0.9.6.min.js"></script>
+    <!-- Create script -->
     <script>
       var webgl;
+      var projMat4;
       var projMat4 = mat4.create();
       var vertexString = `
         attribute vec4 a_position;
@@ -18,18 +21,16 @@
         uniform mat4 proj;
 
         void main(){
-          gl_Position = a_position;
-          gl_PointSize = 60.0;
+          gl_Position = proj * a_position;
         }
       `;
       var fragmentString = `
         void main(){
-          gl_FragColor = vec4(0, 0, 1.0, 1.0);
+          gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
         }
       `;
       // Entry point
       function init() {
-        console.log("init");
         initWebgl();
         initShader();
         initBuffer();
@@ -40,12 +41,16 @@
         let webglDiv =
           document.getElementById("webglCanvas");
         webgl = webglDiv.getContext("webgl");
+
+        // WebGLRenderingContext.viewport(x, y, width, height)
         webgl.viewport(
           0,
           0,
           webglDiv.clientWidth,
           webglDiv.clientHeight
-        ); // WebGLRenderingContext.viewport(x, y, width, height)
+        );
+
+        // mat4.ortho(left, right, bottom, top, near, far, out)
         mat4.ortho(
           0,
           webglDiv.clientWidth,
@@ -72,6 +77,7 @@
         webgl.compileShader(fsshader);
 
         let program = webgl.createProgram();
+
         webgl.attachShader(program, vsshader);
         webgl.attachShader(program, fsshader);
 
@@ -81,86 +87,61 @@
         webgl.program = program;
       }
 
-      var POINTS = [];
       // Data buffering
       function initBuffer() {
         let aPosition = webgl.getAttribLocation(
           webgl.program,
           "a_position"
         );
+        let arr = [
+          100.0, 100.0, 0, 1.0,
+          200.0, 200.0, 0, 1.0,
+          300.0, 200.0, 0, 1.0,
+          400.0, 600.0, 0, 1.0,
+        ];
+        let pointsPosition = new Float32Array(arr);
 
-        document.addEventListener(
-          "mousedown",
-          ({ clientX, clientY, target }) => {
-            let x = clientX;
-            let y = clientY;
-            let rect = target.getBoundingClientRect();
-            let top = rect.top;
-            let left = rect.left;
-            let pointX =
-              (x - left - rect.width / 2) /
-              (rect.width / 2);
-            let pointY =
-              -(y - top - rect.height / 2) /
-              (rect.height / 2);
-            POINTS.push(pointX);
-            POINTS.push(pointY);
-            POINTS.push(0);
-            POINTS.push(1.0);
-            let pointPosition = new Float32Array([
-              ...POINTS,
-              1.0,
-            ]);
-            let pointBuffer = webgl.createBuffer();
-            webgl.bindBuffer(
-              webgl.ARRAY_BUFFER,
-              pointBuffer
-            );
-            webgl.bufferData(
-              webgl.ARRAY_BUFFER,
-              pointPosition,
-              webgl.STATIC_DRAW
-            );
-            webgl.enableVertexAttribArray(aPosition);
-            webgl.vertexAttribPointer(
-              aPosition,
-              4,
-              webgl.FLOAT,
-              false,
-              4 * 4,
-              0 * 4
-            );
-
-            webgl.clearColor(0.0, 0.0, 0.0, 1.0);
-            webgl.clear(
-              webgl.COLOR_BUFFER_BIT |
-                webgl.DEPTH_BUFFER_BIT
-            );
-            webgl.drawArrays(
-              webgl.POINTS,
-              0,
-              POINTS.length
-            );
-          }
+        let lineBuffer = webgl.createBuffer();
+        webgl.bindBuffer(webgl.ARRAY_BUFFER, lineBuffer);
+        webgl.bufferData(
+          webgl.ARRAY_BUFFER,
+          pointsPosition,
+          webgl.STATIC_DRAW
+        );
+        webgl.enableVertexAttribArray(aPosition);
+        webgl.vertexAttribPointer(
+          aPosition,
+          4,
+          webgl.FLOAT,
+          false,
+          4 * 4,
+          0 * 4
         );
 
-        let uniforproj = webgl.getUniformLocation(
+        // Use proj uniform (?)
+        let uProj = webgl.getUniformLocation(
           webgl.program,
           "proj"
         );
-        webgl.uniformMatrix4fv(uniforproj, false, projMat4);
+        webgl.uniformMatrix4fv(uProj, false, projMat4);
       }
 
       function draw() {
         webgl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-        webgl.clear(webgl.COLOR_BUFFER_BIT);
+        webgl.clear(
+          webgl.COLOR_BUFFER_BIT | webgl.DEPTH_BUFFER_BIT
+        );
 
-        webgl.drawArrays(webgl.POINTS, 0, 1);
+        // webgl.drawArrays(webgl.TRIANGLES, 0, 3);
+        webgl.drawArrays(webgl.TRIANGLE_STRIP, 0, 4);
+        // webgl.drawArrays(webgl.TRIANGLE_FAN, 0, 4);
       }
     </script>
   </head>
+  <!-- Initialize code on page load -->
   <body onload="init()">
+    <!-- Create a canvas for WebGL -->
     <canvas
       id="webglCanvas"
       width="1024"
